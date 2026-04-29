@@ -8,7 +8,6 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-database.js";
-
   const firebaseConfig = {
     apiKey: "AIzaSyCV7JSa8MvcKPr4xW1UwIZKnOiE2rMs4Lw",
     authDomain: "marlapalem-children-cricket.firebaseapp.com",
@@ -16,10 +15,8 @@
     projectId: "marlapalem-children-cricket",
     storageBucket: "marlapalem-children-cricket.firebasestorage.app",
     messagingSenderId: "337404427649",
-    appId: "1:337404427649:web:5bd2a4c388609863633c80",
-    measurementId: "G-H3TWTRBEMC"
+    appId: "1:337404427649:web:5bd2a4c388609863633c80"
   };
-
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   window._fbDb = db;
@@ -355,9 +352,9 @@ footer{text-align:center;padding:16px;font-size:11px;color:var(--muted);border-t
       <span id="fbDot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block"></span>
       <span id="fbStatusTxt">Connecting…</span>
     </div>
-    <div style="display:flex;gap:5px;align-items:center">
-      <button id="modeScoreBtn" onclick="setMode('scorer')" style="font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--gold);background:rgba(245,166,35,.15);color:var(--gold);cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:.5px">SCORER</button>
-      <button id="modeViewBtn" onclick="setMode('viewer')" style="font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted);cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:.5px">VIEWER</button>
+    <div style="display:flex;gap:5px">
+      <button id="modeScoreBtn" onclick="setMode('scorer')" style="font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted);cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:.5px">SCORER</button>
+      <button id="modeViewBtn" onclick="setMode('viewer')" style="font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--cyan);background:rgba(0,188,212,.15);color:var(--cyan);cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:.5px">VIEWER</button>
     </div>
   </div>
 </div>
@@ -486,7 +483,7 @@ footer{text-align:center;padding:16px;font-size:11px;color:var(--muted);border-t
 <div class="right-col">
 
   <!-- SCORER CONTROLS -->
-  <div class="ctrl-panel" id="scorerControls">
+  <div class="ctrl-panel" id="scorerControls" style="display:none">
     <div class="sec-head"><h3>⚙ Scorer Controls</h3></div>
     <div class="ctrl-body">
       <div class="inn-sel">
@@ -682,84 +679,6 @@ function selectPlayer(name){
 function closeModal(){document.getElementById('modalBg').classList.remove('open');}
 
 /* ══ SCORING ══ */
-function addWide() {
-  const s = st();
-  if(!s.striker||!s.nonStriker){toast('⚠️ Select Striker & Non-Striker first!');return;}
-  if(!s.bowler){toast('⚠️ Select Bowler first!');return;}
-  document.getElementById('wideModal').style.display = 'flex';
-}
-
-function confirmWide(extraRuns) {
-  document.getElementById('wideModal').style.display = 'none';
-  const totalRuns = 1 + extraRuns;
-  const s = st();
-  const snap = JSON.parse(JSON.stringify(s));
-  s.ballHistory.push(snap);
-
-  s.runs += totalRuns;
-  const bwl = s.bowlers[s.bowler];
-  bwl.runs += totalRuns; bwl.overRuns += totalRuns;
-  s.overBalls.push({type:'wide', runs:totalRuns});
-
-  // Wide = not a legal delivery, balls & batter stats not counted
-  // Swap if odd overthrow runs
-  if (extraRuns % 2 === 1) [s.striker, s.nonStriker] = [s.nonStriker, s.striker];
-
-  addComm(s, 'wide', totalRuns);
-
-  if (currentInnings === 1) {
-    const tgt = innings[0].runs + 1;
-    if (s.runs >= tgt) { endInnings(true); return; }
-  }
-  render();
-  toast(`🌊 Wide + ${extraRuns} = ${totalRuns} runs added!`);
-}
-
-
-  const s = st();
-  if(!s.striker||!s.nonStriker){toast('⚠️ Select Striker & Non-Striker first!');return;}
-  if(!s.bowler){toast('⚠️ Select Bowler first!');return;}
-  document.getElementById('nbModal').style.display = 'flex';
-}
-
-function confirmNB(batterRuns) {
-  document.getElementById('nbModal').style.display = 'none';
-  // Total runs = 1 (no ball penalty) + batter runs
-  const totalRuns = 1 + batterRuns;
-  const s = st();
-  const snap = JSON.parse(JSON.stringify(s));
-  s.ballHistory.push(snap);
-
-  s.runs += totalRuns;
-  const bwl = s.bowlers[s.bowler];
-  bwl.runs += totalRuns; bwl.overRuns += totalRuns;
-  s.overBalls.push({type:'noball', runs:totalRuns});
-
-  // Batter gets credit for their runs (not the penalty 1)
-  const btr = s.batters[s.striker];
-  if (btr && batterRuns > 0) {
-    btr.runs += batterRuns;
-    if (batterRuns === 4) btr.fours++;
-    else if (batterRuns === 6) btr.sixes++;
-    // No ball = not a legal delivery, batter balls not counted
-  }
-
-  // Swap if batter ran odd number
-  if (batterRuns % 2 === 1) [s.striker, s.nonStriker] = [s.nonStriker, s.striker];
-
-  // No ball = not a legal ball, s.balls not incremented
-  addComm(s, 'noball', totalRuns);
-  if (batterRuns === 6) celebrate('six');
-  else if (batterRuns === 4) celebrate('four');
-
-  if (currentInnings === 1) {
-    const tgt = innings[0].runs + 1;
-    if (s.runs >= tgt) { endInnings(true); return; }
-  }
-  render();
-  toast(`🚫 No Ball + ${batterRuns} = ${totalRuns} runs added!`);
-}
-
 function addBall(runs,type){
   const s=st();
   if(!s.striker||!s.nonStriker){toast('⚠️ Select Striker & Non-Striker first!');return;}
@@ -856,8 +775,6 @@ function endInnings(wonChase){
     document.getElementById('resultBanner').classList.add('show');
     if(wonChase||i2.runs>i1.runs||i1.runs===i2.runs) celebrate('win');
     document.getElementById('miStatus').textContent='✓ Completed';
-    // Release scorer lock — match over
-    if (window._fbReady) window._fbSet(window._fbRef(window._fbDb, 'live/scorerLock'), false);
     render();
   }
 }
@@ -873,8 +790,6 @@ function resetMatch(){
   ['strikerBtn','nonstrikerBtn','bowlerBtn'].forEach((id,def)=>document.getElementById(id).textContent=['Select Striker','Select Non-Striker','Select Bowler'][def]);
   document.getElementById('miStatus').textContent='● In Progress';
   render(); toast('Match Reset!');
-  // Release scorer lock on reset
-  if (window._fbReady) window._fbSet(window._fbRef(window._fbDb, 'live/scorerLock'), false);
 }
 
 function switchInnings(idx){
@@ -1124,27 +1039,22 @@ function toast(msg){
 }
 
 /* ══ FIREBASE SYNC ══ */
-let appMode = 'scorer';
+let appMode = 'viewer';
 let fbListenerActive = false;
 let _lastPushedHash = null;
+let _scorerLoaded = false;
 
 function setMode(mode) {
   appMode = mode;
-  document.getElementById('modeScoreBtn').style.background = mode==='scorer'?'rgba(245,166,35,.25)':'rgba(255,255,255,.05)';
-  document.getElementById('modeScoreBtn').style.borderColor = mode==='scorer'?'var(--gold)':'var(--border)';
-  document.getElementById('modeScoreBtn').style.color = mode==='scorer'?'var(--gold)':'var(--muted)';
-  document.getElementById('modeViewBtn').style.background = mode==='viewer'?'rgba(0,188,212,.15)':'rgba(255,255,255,.05)';
-  document.getElementById('modeViewBtn').style.borderColor = mode==='viewer'?'var(--cyan)':'var(--border)';
-  document.getElementById('modeViewBtn').style.color = mode==='viewer'?'var(--cyan)':'var(--muted)';
-  const ctrl = document.getElementById('scorerControls');
-  if (ctrl) ctrl.style.display = mode==='scorer' ? '' : 'none';
-  if (mode === 'scorer') {
-    // Push scorer lock to Firebase so others can't become scorer
-    if (window._fbReady) {
-      window._fbSet(window._fbRef(window._fbDb, 'live/scorerLock'), true);
-    }
-    _scorerLoaded = false;
-    startLiveListener();
+  const sb = document.getElementById('modeScoreBtn');
+  const vb = document.getElementById('modeViewBtn');
+  if(sb) { sb.style.background=mode==='scorer'?'rgba(245,166,35,.25)':'rgba(255,255,255,.05)'; sb.style.borderColor=mode==='scorer'?'var(--gold)':'var(--border)'; sb.style.color=mode==='scorer'?'var(--gold)':'var(--muted)'; }
+  if(vb) { vb.style.background=mode==='viewer'?'rgba(0,188,212,.15)':'rgba(255,255,255,.05)'; vb.style.borderColor=mode==='viewer'?'var(--cyan)':'var(--border)'; vb.style.color=mode==='viewer'?'var(--cyan)':'var(--muted)'; }
+  const ctrl=document.getElementById('scorerControls');
+  if(ctrl) ctrl.style.display=mode==='scorer'?'':'none';
+  if(mode==='scorer'){
+    if(window._fbReady) window._fbSet(window._fbRef(window._fbDb,'live/scorerLock'),true);
+    _scorerLoaded=false; startLiveListener();
     toast('⚙️ Scorer Mode – enter scores here');
   } else {
     toast('👁️ Viewer Mode – watching live');
@@ -1152,50 +1062,39 @@ function setMode(mode) {
   }
 }
 
-function getMatchSnapshot() {
-  return {
-    innings: innings.map(s => ({
-      runs: s.runs, wickets: s.wickets, balls: s.balls,
-      batters: s.batters, bowlers: s.bowlers,
-      striker: s.striker, nonStriker: s.nonStriker, bowler: s.bowler,
-      overBalls: s.overBalls, fallOfWickets: s.fallOfWickets,
-      overHistory: s.overHistory, commentary: s.commentary,
-      usedBatters: s.usedBatters, battersIn: s.battersIn,
-      complete: s.complete || false
-    })),
-    currentInnings, battingTeamIdx, totalOvers, ts: Date.now()
-  };
+function getMatchSnapshot(){
+  return { innings:innings.map(s=>({runs:s.runs,wickets:s.wickets,balls:s.balls,batters:s.batters,bowlers:s.bowlers,striker:s.striker,nonStriker:s.nonStriker,bowler:s.bowler,overBalls:s.overBalls,fallOfWickets:s.fallOfWickets,overHistory:s.overHistory,commentary:s.commentary,usedBatters:s.usedBatters,battersIn:s.battersIn,complete:s.complete||false})), currentInnings, battingTeamIdx, totalOvers, ts:Date.now() };
 }
 
-function pushToFirebase() {
-  if (!window._fbReady || appMode !== 'scorer') return;
+function pushToFirebase(){
+  if(!window._fbReady||appMode!=='scorer') return;
   try {
-    const snap = getMatchSnapshot();
-    const hash = snap.innings[0].runs+'-'+snap.innings[0].wickets+'-'+snap.innings[0].balls+'-'+snap.innings[1].runs+'-'+snap.innings[1].wickets+'-'+snap.innings[1].balls;
-    if (hash === _lastPushedHash) return;
-    _lastPushedHash = hash;
-    window._fbSet(window._fbRef(window._fbDb, 'live/match'), snap)
-      .then(() => setFbStatus('green', 'Synced ✓'))
-      .catch(() => setFbStatus('red', 'Sync Error'));
-  } catch(e) { setFbStatus('red', 'Error'); }
+    const snap=getMatchSnapshot();
+    const hash=snap.innings[0].runs+'-'+snap.innings[0].wickets+'-'+snap.innings[0].balls+'-'+snap.innings[1].runs+'-'+snap.innings[1].wickets+'-'+snap.innings[1].balls;
+    if(hash===_lastPushedHash) return;
+    _lastPushedHash=hash;
+    window._fbSet(window._fbRef(window._fbDb,'live/match'),snap)
+      .then(()=>setFbStatus('green','Synced ✓'))
+      .catch(()=>setFbStatus('red','Sync Error'));
+  } catch(e){ setFbStatus('red','Error'); }
 }
 
-function loadDataFromFirebase(data) {
-  if (!data) return;
-  innings = data.innings.map(s => { const ns = createState(); Object.assign(ns, s); ns.ballHistory = ns.ballHistory || []; return ns; });
-  currentInnings = data.currentInnings || 0;
-  battingTeamIdx = data.battingTeamIdx || 0;
-  totalOvers = data.totalOvers || 10;
-  if (document.getElementById('battingTeamSelect')) document.getElementById('battingTeamSelect').value = battingTeamIdx;
-  if (document.getElementById('totalOversInput')) document.getElementById('totalOversInput').value = totalOvers;
-  document.getElementById('miOvers').textContent = totalOvers;
-  ['inn1btn','inn2btn'].forEach((id,i) => document.getElementById(id).classList.toggle('active', i===currentInnings));
-  ['t-inn1','t-inn2'].forEach((id,i) => document.getElementById(id).classList.toggle('active', i===currentInnings));
-  const s2 = innings[currentInnings];
-  if (s2.striker && document.getElementById('strikerBtn')) document.getElementById('strikerBtn').textContent = s2.striker;
-  if (s2.nonStriker && document.getElementById('nonstrikerBtn')) document.getElementById('nonstrikerBtn').textContent = s2.nonStriker;
-  if (s2.bowler && document.getElementById('bowlerBtn')) document.getElementById('bowlerBtn').textContent = s2.bowler;
-  if (data.innings[1] && data.innings[1].complete) {
+function loadFromFirebase(data){
+  if(!data) return;
+  innings=data.innings.map(s=>{const ns=createState();Object.assign(ns,s);ns.ballHistory=ns.ballHistory||[];return ns;});
+  currentInnings=data.currentInnings||0;
+  battingTeamIdx=data.battingTeamIdx||0;
+  totalOvers=data.totalOvers||10;
+  if(document.getElementById('battingTeamSelect')) document.getElementById('battingTeamSelect').value=battingTeamIdx;
+  if(document.getElementById('totalOversInput')) document.getElementById('totalOversInput').value=totalOvers;
+  document.getElementById('miOvers').textContent=totalOvers;
+  ['inn1btn','inn2btn'].forEach((id,i)=>document.getElementById(id).classList.toggle('active',i===currentInnings));
+  ['t-inn1','t-inn2'].forEach((id,i)=>document.getElementById(id).classList.toggle('active',i===currentInnings));
+  const s2=innings[currentInnings];
+  if(s2.striker&&document.getElementById('strikerBtn')) document.getElementById('strikerBtn').textContent=s2.striker;
+  if(s2.nonStriker&&document.getElementById('nonstrikerBtn')) document.getElementById('nonstrikerBtn').textContent=s2.nonStriker;
+  if(s2.bowler&&document.getElementById('bowlerBtn')) document.getElementById('bowlerBtn').textContent=s2.bowler;
+  if(data.innings[1]&&data.innings[1].complete){
     const i1=innings[0],i2=innings[1];
     const tn1=TEAMS[1-battingTeamIdx].name,tn2=TEAMS[battingTeamIdx].name;
     let res=i2.runs>i1.runs?'🏆 '+tn2+' WON by '+(10-i2.wickets)+' WICKETS!':i1.runs>i2.runs?'🏆 '+tn1+' WON by '+(i1.runs-i2.runs)+' RUNS!':'🤝 MATCH TIED!';
@@ -1205,101 +1104,124 @@ function loadDataFromFirebase(data) {
   render();
 }
 
-function startLiveListener() {
-  if (!window._fbReady) return;
-  if (fbListenerActive) return;
-  fbListenerActive = true;
-  const matchRef = window._fbRef(window._fbDb, 'live/match');
-  window._fbOnValue(matchRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data) { setFbStatus('orange', 'No data yet'); return; }
-    setFbStatus('green', 'Live ●');
-    // Both viewer AND scorer load from Firebase on first load (refresh recovery)
-    if (appMode === 'viewer') {
-      loadDataFromFirebase(data);
-    } else if (appMode === 'scorer' && !_scorerLoaded) {
-      // On refresh, scorer loads last saved state from Firebase
-      _scorerLoaded = true;
-      loadDataFromFirebase(data);
-      toast('♻️ Score restored from Firebase!');
-    }
-  }, () => { setFbStatus('red', 'DB Error'); });
+function startLiveListener(){
+  if(!window._fbReady) return;
+  if(fbListenerActive) return;
+  fbListenerActive=true;
+  window._fbOnValue(window._fbRef(window._fbDb,'live/match'),(snapshot)=>{
+    const data=snapshot.val();
+    if(!data){setFbStatus('orange','No data yet');return;}
+    setFbStatus('green','Live ●');
+    if(appMode==='viewer'){ loadFromFirebase(data); }
+    else if(appMode==='scorer'&&!_scorerLoaded){ _scorerLoaded=true; loadFromFirebase(data); toast('♻️ Score restored!'); }
+  },()=>setFbStatus('red','DB Error'));
 }
 
-let _scorerLoaded = false;
-
-function setFbStatus(color, text) {
-  const dot=document.getElementById('fbDot'), txt=document.getElementById('fbStatusTxt');
-  if (!dot||!txt) return;
+function setFbStatus(color,text){
+  const dot=document.getElementById('fbDot'),txt=document.getElementById('fbStatusTxt');
+  if(!dot||!txt) return;
   const c={green:'#11bf63',red:'#ff6b6b',orange:'#f5a623'};
-  dot.style.background = c[color]||'var(--muted)'; txt.textContent = text;
+  dot.style.background=c[color]||'var(--muted)'; txt.textContent=text;
 }
 
-const _origRender = render;
-render = function() { _origRender(); if (appMode==='scorer') pushToFirebase(); };
+const _origRender=render;
+render=function(){ _origRender(); if(appMode==='scorer') pushToFirebase(); };
 
-function initFirebase() {
-  setFbStatus('green', 'Connected');
-  // Listen for scorer lock
-  const lockRef = window._fbRef(window._fbDb, 'live/scorerLock');
-  window._fbOnValue(lockRef, (snap) => {
-    const locked = snap.val();
-    const btn = document.getElementById('modeScoreBtn');
-    if (!btn) return;
-    if (locked && appMode !== 'scorer') {
-      // Someone else is scorer — disable SCORER button for viewers
-      btn.disabled = true;
-      btn.style.opacity = '0.4';
-      btn.style.cursor = 'not-allowed';
-      btn.title = 'Scorer already active!';
-    } else if (!locked) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
-      btn.title = '';
-    }
+function initFirebase(){
+  setFbStatus('green','Connected');
+  window._fbOnValue(window._fbRef(window._fbDb,'live/scorerLock'),(snap)=>{
+    const locked=snap.val();
+    const btn=document.getElementById('modeScoreBtn');
+    if(!btn) return;
+    if(locked&&appMode!=='scorer'){ btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed'; btn.title='Scorer already active!'; }
+    else if(!locked){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; btn.title=''; }
   });
   startLiveListener();
 }
-if (window._fbReady) { initFirebase(); } else { window.addEventListener('fbReady', initFirebase); }
+if(window._fbReady){ initFirebase(); } else { window.addEventListener('fbReady',initFirebase); }
+
+/* ══ NB & WIDE ══ */
+function addNoBall(){
+  const s=st();
+  if(!s.striker||!s.nonStriker){toast('⚠️ Select Striker & Non-Striker first!');return;}
+  if(!s.bowler){toast('⚠️ Select Bowler first!');return;}
+  document.getElementById('nbModal').style.display='flex';
+}
+function confirmNB(batterRuns){
+  document.getElementById('nbModal').style.display='none';
+  const totalRuns=1+batterRuns;
+  const s=st();
+  const snap=JSON.parse(JSON.stringify(s));
+  s.ballHistory.push(snap);
+  s.runs+=totalRuns;
+  const bwl=s.bowlers[s.bowler];
+  bwl.runs+=totalRuns; bwl.overRuns+=totalRuns;
+  s.overBalls.push({type:'noball',runs:totalRuns});
+  const btr=s.batters[s.striker];
+  if(btr&&batterRuns>0){ btr.runs+=batterRuns; if(batterRuns===4)btr.fours++; else if(batterRuns===6)btr.sixes++; }
+  if(batterRuns%2===1)[s.striker,s.nonStriker]=[s.nonStriker,s.striker];
+  addComm(s,'noball',totalRuns);
+  if(batterRuns===6)celebrate('six'); else if(batterRuns===4)celebrate('four');
+  if(currentInnings===1){const tgt=innings[0].runs+1;if(s.runs>=tgt){endInnings(true);return;}}
+  render(); toast('🚫 NB +'+batterRuns+' = '+totalRuns+' runs!');
+}
+function addWide(){
+  const s=st();
+  if(!s.striker||!s.nonStriker){toast('⚠️ Select Striker & Non-Striker first!');return;}
+  if(!s.bowler){toast('⚠️ Select Bowler first!');return;}
+  document.getElementById('wideModal').style.display='flex';
+}
+function confirmWide(extraRuns){
+  document.getElementById('wideModal').style.display='none';
+  const totalRuns=1+extraRuns;
+  const s=st();
+  const snap=JSON.parse(JSON.stringify(s));
+  s.ballHistory.push(snap);
+  s.runs+=totalRuns;
+  const bwl=s.bowlers[s.bowler];
+  bwl.runs+=totalRuns; bwl.overRuns+=totalRuns;
+  s.overBalls.push({type:'wide',runs:totalRuns});
+  if(extraRuns%2===1)[s.striker,s.nonStriker]=[s.nonStriker,s.striker];
+  addComm(s,'wide',totalRuns);
+  if(currentInnings===1){const tgt=innings[0].runs+1;if(s.runs>=tgt){endInnings(true);return;}}
+  render(); toast('🌊 Wide +'+extraRuns+' = '+totalRuns+' runs!');
+}
 
 /* ══ INIT ══ */
 showSquad(0);
 render();
 </script>
-<!-- NB EXTRAS MODAL -->
-<div id="nbModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:var(--card);border:1px solid #9333ea;border-radius:16px;padding:24px;width:320px;text-align:center">
-    <div style="font-family:'Oswald',sans-serif;font-size:18px;color:#d8b4fe;margin-bottom:6px">🚫 NO BALL</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:18px">Batter కూడా runs తీశారా? Select చేయండి:</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-      <button onclick="confirmNB(0)" style="padding:14px;border-radius:10px;border:1px solid #9333ea;background:rgba(120,0,160,.2);color:#d8b4fe;font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">0</button>
-      <button onclick="confirmNB(1)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">1</button>
-      <button onclick="confirmNB(2)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">2</button>
-      <button onclick="confirmNB(3)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">3</button>
-      <button onclick="confirmNB(4)" style="padding:14px;border-radius:10px;border:1px solid var(--gold);background:rgba(245,166,35,.15);color:var(--gold);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">4</button>
-      <button onclick="confirmNB(6)" style="padding:14px;border-radius:10px;border:1px solid var(--green2);background:rgba(13,158,82,.15);color:var(--green3);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">6</button>
+<!-- NB MODAL -->
+<div id="nbModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid #9333ea;border-radius:16px;padding:24px;width:300px;text-align:center">
+    <div style="font-family:'Oswald',sans-serif;font-size:20px;color:#d8b4fe;margin-bottom:6px">🚫 NO BALL</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Batter runs తీశారా?</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <button onclick="confirmNB(0)" style="padding:14px;border-radius:10px;border:1px solid #9333ea;background:rgba(120,0,160,.2);color:#d8b4fe;font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">0</button>
+      <button onclick="confirmNB(1)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">1</button>
+      <button onclick="confirmNB(2)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">2</button>
+      <button onclick="confirmNB(3)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">3</button>
+      <button onclick="confirmNB(4)" style="padding:14px;border-radius:10px;border:1px solid var(--gold);background:rgba(245,166,35,.15);color:var(--gold);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">4</button>
+      <button onclick="confirmNB(6)" style="padding:14px;border-radius:10px;border:1px solid var(--green2);background:rgba(13,158,82,.15);color:var(--green3);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">6</button>
     </div>
     <button onclick="document.getElementById('nbModal').style.display='none'" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px">Cancel</button>
   </div>
 </div>
-
-<!-- WIDE EXTRAS MODAL -->
-<div id="wideModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:var(--card);border:1px solid var(--cyan);border-radius:16px;padding:24px;width:320px;text-align:center">
-    <div style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--cyan);margin-bottom:6px">🌊 WIDE</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:18px">Overthrow runs వచ్చాయా? Select చేయండి:</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-      <button onclick="confirmWide(0)" style="padding:14px;border-radius:10px;border:1px solid var(--cyan);background:rgba(0,188,212,.2);color:var(--cyan);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">0</button>
-      <button onclick="confirmWide(1)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">1</button>
-      <button onclick="confirmWide(2)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">2</button>
-      <button onclick="confirmWide(3)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">3</button>
-      <button onclick="confirmWide(4)" style="padding:14px;border-radius:10px;border:1px solid var(--gold);background:rgba(245,166,35,.15);color:var(--gold);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">4</button>
-      <button onclick="confirmWide(6)" style="padding:14px;border-radius:10px;border:1px solid var(--green2);background:rgba(13,158,82,.15);color:var(--green3);font-size:18px;font-family:'Oswald',sans-serif;cursor:pointer">6</button>
+<!-- WIDE MODAL -->
+<div id="wideModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--cyan);border-radius:16px;padding:24px;width:300px;text-align:center">
+    <div style="font-family:'Oswald',sans-serif;font-size:20px;color:var(--cyan);margin-bottom:6px">🌊 WIDE</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Overthrow runs వచ్చాయా?</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <button onclick="confirmWide(0)" style="padding:14px;border-radius:10px;border:1px solid var(--cyan);background:rgba(0,188,212,.2);color:var(--cyan);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">0</button>
+      <button onclick="confirmWide(1)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">1</button>
+      <button onclick="confirmWide(2)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">2</button>
+      <button onclick="confirmWide(3)" style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--white);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">3</button>
+      <button onclick="confirmWide(4)" style="padding:14px;border-radius:10px;border:1px solid var(--gold);background:rgba(245,166,35,.15);color:var(--gold);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">4</button>
+      <button onclick="confirmWide(6)" style="padding:14px;border-radius:10px;border:1px solid var(--green2);background:rgba(13,158,82,.15);color:var(--green3);font-size:20px;font-family:'Oswald',sans-serif;cursor:pointer">6</button>
     </div>
     <button onclick="document.getElementById('wideModal').style.display='none'" style="padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px">Cancel</button>
   </div>
 </div>
-
 </body>
 </html>
